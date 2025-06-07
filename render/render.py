@@ -14,6 +14,7 @@ RPi device, while using a ESP32 or PiZero purely to just retrieve the image from
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+import shutil
 from time import sleep
 from datetime import timedelta
 import pathlib
@@ -50,16 +51,33 @@ class RenderHelper:
             height=target_height)
 
     def get_screenshot(self):
+        from selenium.webdriver.chrome.service import Service
+        chrome_path = shutil.which("chromium-browser")
+        driver_path = shutil.which("chromedriver")
+
+        if not chrome_path:
+            raise FileNotFoundError("Could not find chromium-browser in PATH")
+        if not driver_path:
+            raise FileNotFoundError("Could not find chromedriver in PATH")
+
         opts = Options()
+        opts.binary_location = chrome_path
         opts.add_argument("--headless")
-        opts.add_argument("--hide-scrollbars");
+        opts.add_argument("--hide-scrollbars")
+        opts.add_argument("--no-sandbox")
+        opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument('--force-device-scale-factor=1')
-        driver = webdriver.Chrome(options=opts)
-        self.set_viewport_size(driver)
-        driver.get(self.htmlFile)
-        sleep(1)
-        driver.get_screenshot_as_file(self.currPath + '/calendar.png')
-        driver.quit()
+        
+        service = Service(executable_path=driver_path)
+        driver = webdriver.Chrome(service=service, options=opts)
+
+        try:
+            self.set_viewport_size(driver)
+            driver.get(self.htmlFile)
+            sleep(1)
+            driver.get_screenshot_as_file(self.currPath + '/calendar.png')
+        finally:
+            driver.quit()
 
         self.logger.info('Screenshot captured and saved to file.')
 
