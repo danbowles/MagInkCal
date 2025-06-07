@@ -2,6 +2,8 @@
 gcal/credentials.json
 gcal/token.pickle
 
+.vscode
+
 # Intermediate render files
 render/calendar.html
 render/calendar.png
