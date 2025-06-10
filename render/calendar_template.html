@@ -1,21 +1,40 @@
 <html>
+
 <head>
-    <link rel="stylesheet" href="bootstrap.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="fonts.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+
+    <!-- <link rel="stylesheet" href="styles.css"> -->
 </head>
-<body>
-<div class="container p-0 m-0">
-    <!-- Calendar -->
-    <div class="calendar shadow bg-white p-3">
-        <!-- Month -->
-        <div class="align-items-center text-center"><h3 class="month font-weight-bold mb-0 text-uppercase">{month}</h3></div>
+
+<body class="bg-white text-einkBlack font-quattro text-[12px] w-[1304px] h-[984px] p-4 overflow-hidden">
+    <!-- HEADER -->
+    <div class="flex justify-between items-start mb-3">
+        <!-- Date -->
+        <div class="leading-tight">
+            <div class="text-[20px] font-bold">{month_year}</div>
+            <div class="text-[14px]">{weekday_day}</div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex space-x-4 items-center text-[12px]">{legendHtml}</div>
+
         <!-- Battery -->
-        <div class="batt_container"><img class="{battText}" src="battery.png" /></div>
-        <!-- Days of week -->
-        <ol class="day-names list-unstyled text-center">{dayOfWeek}</ol>
-        <!-- Calendar and events -->
-        <ol class="days list-unstyled">{events}</ol>
+        <div class="relative w-10 h-4 border border-einkBlack rounded-sm">
+            <div class="absolute top-0 left-0 h-full bg-einkBlack w-[44%] {batt_level_percent}"></div>
+            <div class="absolute right-[-4px] top-[2px] w-[2px] h-[8px] bg-einkBlack rounded-sm"></div>
+        </div>
     </div>
-</div>
+
+    <!-- DAY OF WEEK HEADER -->
+    <div class="grid grid-cols-7 text-center font-bold border-b border-gray-300 mb-1">
+        {week_day_headers}
+    </div>
+
+    <!-- CALENDAR GRID -->
+    <div class="grid grid-cols-7 grid-rows-5 gap-px text-xs">
+        {events}
+    </div>
 </body>
 </html>

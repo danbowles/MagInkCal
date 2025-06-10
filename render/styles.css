@@ -60,7 +60,7 @@ body {
     background-color: #fff;
 }
 
-@font-face {
+/* @font-face {
     font-family: "Quattrocento-Bold";
     src: url('Quattrocento-Bold.ttf');
 }
@@ -68,7 +68,7 @@ body {
 @font-face {
     font-family: "Quattrocento-Regular";
     src: url('Quattrocento-Regular.ttf');
-}
+} */
 
 .container {
     width: 100%;

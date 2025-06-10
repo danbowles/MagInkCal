@@ -2,18 +2,33 @@
   "displayTZ": "America/New_York",
   "thresholdHours": 24,
   "maxEventsPerDay": 3,
-  "isDisplayToScreen": true,
+  "isDisplayToScreen": false,
   "isShutdownOnComplete": false,
   "batteryDisplayMode": 1,
   "weekStartDay": 6,
-  "dayOfWeekText": ["M", "T", "W", "T", "F", "S", "S"],
+  "dayOfWeekText": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
   "screenWidth": 1304,
   "screenHeight": 984,
-  "imageWidth": 984,
-  "imageHeight": 1304,
-  "rotateAngle": 270,
+  "imageHeight": 984,
+  "imageWidth": 1304,
+  "rotateAngle": 180,
   "is24h": false,
   "calendars": [
-    "primary"
-  ]
+    "primary",
+    "uqdcdhpp71klf5f2qk8khf9r4k@group.calendar.google.com"
+  ],
+  "calendarsWithLabels": {
+    "primary": {
+      "name": "Dan",
+      "icon": "♣︎"
+    },
+    "uqdcdhpp71klf5f2qk8khf9r4k@group.calendar.google.com": {
+      "name": "Eiley",
+      "icon": "♠︎"
+    },
+    "stipeified@gmail.com": {
+      "name": "Candace",
+      "icon": "⬢"
+    }
+  }
 }

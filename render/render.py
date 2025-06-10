@@ -20,14 +20,15 @@ from datetime import timedelta
 import pathlib
 from PIL import Image
 import logging
+from calendar import monthrange
 
 
 class RenderHelper:
 
     def __init__(self, width, height, angle):
-        self.logger = logging.getLogger('maginkcal')
+        self.logger = logging.getLogger("maginkcal")
         self.currPath = str(pathlib.Path(__file__).parent.absolute())
-        self.htmlFile = 'file://' + self.currPath + '/calendar.html'
+        self.htmlFile = "file://" + self.currPath + "/calendar.html"
         self.imageWidth = width
         self.imageHeight = height
         self.rotateAngle = angle
@@ -38,20 +39,21 @@ class RenderHelper:
         current_window_size = driver.get_window_size()
 
         # Extract the client window size from the html tag
-        html = driver.find_element(By.TAG_NAME,'html')
+        html = driver.find_element(By.TAG_NAME, "html")
         inner_width = int(html.get_attribute("clientWidth"))
         inner_height = int(html.get_attribute("clientHeight"))
 
         # "Internal width you want to set+Set "outer frame width" to window size
         target_width = self.imageWidth + (current_window_size["width"] - inner_width)
-        target_height = self.imageHeight + (current_window_size["height"] - inner_height)
+        target_height = self.imageHeight + (
+            current_window_size["height"] - inner_height
+        )
 
-        driver.set_window_rect(
-            width=target_width,
-            height=target_height)
+        driver.set_window_rect(width=target_width, height=target_height)
 
     def get_screenshot(self):
         from selenium.webdriver.chrome.service import Service
+
         chrome_path = shutil.which("chromium-browser")
         driver_path = shutil.which("chromedriver")
 
@@ -66,8 +68,8 @@ class RenderHelper:
         opts.add_argument("--hide-scrollbars")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
-        opts.add_argument('--force-device-scale-factor=1')
-        
+        opts.add_argument("--force-device-scale-factor=1")
+
         service = Service(executable_path=driver_path)
         driver = webdriver.Chrome(service=service, options=opts)
 
@@ -75,29 +77,45 @@ class RenderHelper:
             self.set_viewport_size(driver)
             driver.get(self.htmlFile)
             sleep(1)
-            driver.get_screenshot_as_file(self.currPath + '/calendar.png')
+            driver.get_screenshot_as_file(self.currPath + "/calendar.png")
         finally:
             driver.quit()
 
-        self.logger.info('Screenshot captured and saved to file.')
+        self.logger.info("Screenshot captured and saved to file.")
 
-        redimg = Image.open(self.currPath + '/calendar.png')  # get image)
+        redimg = Image.open(self.currPath + "/calendar.png")  # get image)
         rpixels = redimg.load()  # create the pixel map
-        blackimg = Image.open(self.currPath + '/calendar.png')  # get image)
+        blackimg = Image.open(self.currPath + "/calendar.png")  # get image)
         bpixels = blackimg.load()  # create the pixel map
 
         for i in range(redimg.size[0]):  # loop through every pixel in the image
-            for j in range(redimg.size[1]): # since both bitmaps are identical, cycle only once and not both bitmaps
-                if rpixels[i, j][0] <= rpixels[i, j][1] and rpixels[i, j][0] <= rpixels[i, j][2]:  # if is not red
-                    rpixels[i, j] = (255, 255, 255)  # change it to white in the red image bitmap
+            for j in range(
+                redimg.size[1]
+            ):  # since both bitmaps are identical, cycle only once and not both bitmaps
+                if (
+                    rpixels[i, j][0] <= rpixels[i, j][1]
+                    and rpixels[i, j][0] <= rpixels[i, j][2]
+                ):  # if is not red
+                    rpixels[i, j] = (
+                        255,
+                        255,
+                        255,
+                    )  # change it to white in the red image bitmap
 
-                elif bpixels[i, j][0] > bpixels[i, j][1] and bpixels[i, j][0] > bpixels[i, j][2]:  # if is red
-                    bpixels[i, j] = (255, 255, 255)  # change to white in the black image bitmap
+                elif (
+                    bpixels[i, j][0] > bpixels[i, j][1]
+                    and bpixels[i, j][0] > bpixels[i, j][2]
+                ):  # if is red
+                    bpixels[i, j] = (
+                        255,
+                        255,
+                        255,
+                    )  # change to white in the black image bitmap
 
         redimg = redimg.rotate(self.rotateAngle, expand=True)
         blackimg = blackimg.rotate(self.rotateAngle, expand=True)
 
-        self.logger.info('Image colours processed. Extracted grayscale and red images.')
+        self.logger.info("Image colours processed. Extracted grayscale and red images.")
         return blackimg, redimg
 
     def get_day_in_cal(self, startDate, eventDate):
@@ -105,123 +123,165 @@ class RenderHelper:
         return delta.days
 
     def get_short_time(self, datetimeObj, is24hour=False):
-        datetime_str = ''
+        datetime_str = ""
         if is24hour:
-            datetime_str = '{}:{:02d}'.format(datetimeObj.hour, datetimeObj.minute)
+            datetime_str = "{}:{:02d}".format(datetimeObj.hour, datetimeObj.minute)
         else:
             if datetimeObj.minute > 0:
-                datetime_str = '.{:02d}'.format(datetimeObj.minute)
+                datetime_str = ".{:02d}".format(datetimeObj.minute)
 
             if datetimeObj.hour == 0:
-                datetime_str = '12{}am'.format(datetime_str)
+                datetime_str = "12{}am".format(datetime_str)
             elif datetimeObj.hour == 12:
-                datetime_str = '12{}pm'.format(datetime_str)
+                datetime_str = "12{}pm".format(datetime_str)
             elif datetimeObj.hour > 12:
-                datetime_str = '{}{}pm'.format(str(datetimeObj.hour % 12), datetime_str)
+                datetime_str = "{}{}pm".format(str(datetimeObj.hour % 12), datetime_str)
             else:
-                datetime_str = '{}{}am'.format(str(datetimeObj.hour), datetime_str)
+                datetime_str = "{}{}am".format(str(datetimeObj.hour), datetime_str)
         return datetime_str
 
+    def ordinal_suffix(n):
+        if 11 <= n % 100 <= 13:
+            return "th"
+        return {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+
     def process_inputs(self, calDict):
-        # calDict = {'events': eventList, 'calStartDate': calStartDate, 'today': currDate, 'lastRefresh': currDatetime, 'batteryLevel': batteryLevel}
-        # first setup list to represent the 5 weeks in our calendar
-        calList = []
-        for i in range(35):
-            calList.append([])
+        def ordinal_suffix(n):
+            if 11 <= n % 100 <= 13:
+                return "th"
+            return {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
 
-        # retrieve calendar configuration
-        maxEventsPerDay = calDict['maxEventsPerDay']
-        batteryDisplayMode = calDict['batteryDisplayMode']
-        dayOfWeekText = calDict['dayOfWeekText']
-        weekStartDay = calDict['weekStartDay']
-        is24hour = calDict['is24hour']
+        """
+        calDict = {
+            'calStartDate': calStartDate,
+            'today': currDate,
+            'lastRefresh': currDatetime,
+            'batteryLevel': batteryLevel,
+            'maxEventsPerDay': int,
+            'dayOfWeekText': list of str,
+            'weekStartDay': int,
+            'is24hour': bool,
+            'calendarMap': {
+                'id_1': {'name': 'Ellie', 'icon': '♣︎', 'events': [...]},
+                ...
+            },
+        }
+        """
+        # Initialize 35-day calendar list
+        calList = [[] for _ in range(35)]
 
-        # for each item in the eventList, add them to the relevant day in our calendar list
-        for event in calDict['events']:
-            idx = self.get_day_in_cal(calDict['calStartDate'], event['startDatetime'].date())
-            if idx >= 0:
-                calList[idx].append(event)
-            if event['isMultiday']:
-                idx = self.get_day_in_cal(calDict['calStartDate'], event['endDatetime'].date())
-                if idx < len(calList):
+        maxEventsPerDay = calDict["maxEventsPerDay"]
+        calendarMap = calDict["calendarMap"]
+        batteryDisplayMode = calDict["batteryDisplayMode"]
+        dayOfWeekText = calDict["dayOfWeekText"]
+        weekStartDay = calDict["weekStartDay"]
+        is24hour = calDict["is24hour"]
+        calStartDate = calDict["calStartDate"]
+        today = calDict["today"]
+
+        legendHtml = ""
+        for cal_id, info in calendarMap.items():
+            legendHtml += f'<div class="flex items-center"><span class="mr-1">{info["icon"]}</span>{info["name"]}</div>\n'
+
+        # Merge and assign events to days
+        for cal_id, cal_data in calendarMap.items():
+            for event in cal_data["events"]:
+                event["icon"] = cal_data["icon"]
+                event["ownerName"] = cal_data["name"]
+                idx = self.get_day_in_cal(calStartDate, event["startDatetime"].date())
+                if 0 <= idx < len(calList):
                     calList[idx].append(event)
+                if event["isMultiday"]:
+                    end_idx = self.get_day_in_cal(
+                        calStartDate, event["endDatetime"].date()
+                    )
+                    if 0 <= end_idx < len(calList):
+                        calList[end_idx].append(event)
 
-        # Read html template
-        with open(self.currPath + '/calendar_template.html', 'r') as file:
+        # Read the template
+        with open(self.currPath + "/calendar_template.html", "r") as file:
             calendar_template = file.read()
 
-        # Insert month header
-        month_name = str(calDict['today'].month)
+        # Format header
+        month_year = today.strftime("%B %Y")
+        weekday = today.strftime("%A")
+        day = today.day
+        weekday_day = f"{weekday}, {day}{ordinal_suffix(day)}"
 
-        # Insert battery icon
         # batteryDisplayMode - 0: do not show / 1: always show / 2: show when battery is low
-        battLevel = calDict['batteryLevel']
+        battLevel = calDict["batteryLevel"]
+        battLevel = 55
 
-        if batteryDisplayMode == 0:
-            battText = 'batteryHide'
-        elif batteryDisplayMode == 1:
-            if battLevel >= 80:
-                battText = 'battery80'
-            elif battLevel >= 60:
-                battText = 'battery60'
-            elif battLevel >= 40:
-                battText = 'battery40'
-            elif battLevel >= 20:
-                battText = 'battery20'
+        week_day_headers = "".join(
+            f"<div>{dayOfWeekText[(i + weekStartDay) % 7]}</div>\n" for i in range(7)
+        )
+        
+        # Calculate proper start and grid size
+        month_start = today.replace(day=1)
+        sunday_offset = (month_start.weekday() + 1) % 7
+        calStartDate = month_start - timedelta(days=sunday_offset)
+
+        end_of_month = today.replace(day=monthrange(today.year, today.month)[1])
+        days_needed = (end_of_month - calStartDate).days + 1
+        grid_size = 42 if days_needed > 35 else 35
+
+        calendar_cells = []
+        # Then:
+        for i in range(grid_size):
+            curr_date = calStartDate + timedelta(days=i)
+            events = []
+
+            for cal in calendarMap.values():
+                for e in cal["events"]:
+                    if e["startDatetime"].date() == curr_date:
+                        events.append({**e, "icon": cal["icon"], "name": cal["name"]})
+
+            events.sort(key=lambda e: e["startDatetime"])
+
+            # Determine styling
+            extra_classes = ' text-einkGray' if curr_date.month != today.month else ''
+            day_cell = f'<div class="p-1 border border-gray-200{extra_classes}">'
+
+            # Day number rendering
+            if curr_date == today:
+                day_cell += f'''
+                <div class="flex justify-between items-center mb-1">
+                <div class="w-6 h-6 text-center leading-6 rounded-full font-bold text-white bg-einkRed">{curr_date.day}</div>
+                </div>
+                '''
             else:
-                battText = 'battery0'
+                day_cell += f'<div class="mb-1 font-bold">{curr_date.day}</div>\n'
 
-        elif batteryDisplayMode == 2 and battLevel < 20.0:
-            battText = 'battery0'
-        elif batteryDisplayMode == 2 and battLevel >= 20.0:
-            battText = 'batteryHide'
-
-        # Populate the day of week row
-        cal_days_of_week = ''
-        for i in range(0, 7):
-            cal_days_of_week += '<li class="font-weight-bold text-uppercase">' + dayOfWeekText[
-                (i + weekStartDay) % 7] + "</li>\n"
-
-        # Populate the date and events
-        cal_events_text = ''
-        for i in range(len(calList)):
-            currDate = calDict['calStartDate'] + timedelta(days=i)
-            dayOfMonth = currDate.day
-            if currDate == calDict['today']:
-                cal_events_text += '<li><div class="datecircle">' + str(dayOfMonth) + '</div>\n'
-            elif currDate.month != calDict['today'].month:
-                cal_events_text += '<li><div class="date text-muted">' + str(dayOfMonth) + '</div>\n'
-            else:
-                cal_events_text += '<li><div class="date">' + str(dayOfMonth) + '</div>\n'
-
-            for j in range(min(len(calList[i]), maxEventsPerDay)):
-                event = calList[i][j]
-                cal_events_text += '<div class="event'
-                if event['isUpdated']:
-                    cal_events_text += ' text-danger'
-                elif currDate.month != calDict['today'].month:
-                    cal_events_text += ' text-muted'
-                if event['isMultiday']:
-                    if event['startDatetime'].date() == currDate:
-                        cal_events_text += '">►' + event['summary']
-                    else:
-                        # calHtmlList.append(' text-multiday">')
-                        cal_events_text += '">◄' + event['summary']
-                elif event['allday']:
-                    cal_events_text += '">' + event['summary']
+            # Event rendering
+            for e in events[:maxEventsPerDay]:
+                if e['allday']:
+                    label = f'{e["icon"]} {e["summary"]}'
                 else:
-                    cal_events_text += '">' + self.get_short_time(event['startDatetime'], is24hour) + ' ' + event[
-                        'summary']
-                cal_events_text += '</div>\n'
-            if len(calList[i]) > maxEventsPerDay:
-                cal_events_text += '<div class="event text-muted">' + str(len(calList[i]) - maxEventsPerDay) + ' more'
+                    t = e["startDatetime"]
+                    time_str = f'{t.hour:02d}:{t.minute:02d}' if is24hour else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
+                    label = f'{e["icon"]} {time_str} {e["summary"]}'
+                day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis">{label}</div>\n'
 
-            cal_events_text += '</li>\n'
+            # Overflow indicator
+            if len(events) > maxEventsPerDay:
+                day_cell += f'<div class="text-einkGray text-xs">{len(events) - maxEventsPerDay} more</div>'
 
+            day_cell += '</div>'
+            calendar_cells.append(day_cell.strip())
+
+            
         # Append the bottom and write the file
-        htmlFile = open(self.currPath + '/calendar.html', "w")
-        htmlFile.write(calendar_template.format(month=month_name, battText=battText, dayOfWeek=cal_days_of_week,
-                                                events=cal_events_text))
+        htmlFile = open(self.currPath + "/calendar.html", "w")
+        htmlFile.write(
+            calendar_template.format(
+                month_year=month_year,
+                weekday_day=weekday_day,
+                week_day_headers=week_day_headers,
+                batt_level_percent=f"{battLevel}%",
+                legendHtml=legendHtml,
+                events='\n'.join(calendar_cells),
+            )
+        )
         htmlFile.close()
 
         calBlackImage, calRedImage = self.get_screenshot()

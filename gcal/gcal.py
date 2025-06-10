@@ -82,56 +82,112 @@ class GcalHelper:
         # check if event stretches across multiple days
         return start.date() != end.date()
 
-    def retrieve_events(self, calendars, startDatetime, endDatetime, localTZ, thresholdHours):
+    def retrieve_events(self, calendarsConfig, startDatetime, endDatetime, localTZ, thresholdHours):
+        """
+        calendar_config: dict of calendarId -> {name, icon}
+        Returns: dict of calendarId -> {name, icon, events: [...]}
+        """
+        self.logger.info(f'Retrieving events between {startDatetime.isoformat()} and {endDatetime.isoformat()}...')
+
+        # Build initial calendar map with empty event lists
+        calendar_event_map = {
+            cal_id: {**data, "events": []}
+            for cal_id, data in calendarsConfig.items()
+        }
+        
+        for cal_id in calendarsConfig:
+            try:
+                response = self.service.events().list(
+                    calendarId=cal_id,
+                    timeMin=startDatetime.isoformat(),
+                    timeMax=endDatetime.isoformat(),
+                    singleEvents=True,
+                    orderBy='startTime'
+                ).execute()
+
+                events = response.get('items', [])
+
+                for event in events:
+                    new_event = {
+                        "summary": event.get("summary", ""),
+                        "icon": calendarsConfig[cal_id]["icon"],
+                        "ownerName": calendarsConfig[cal_id]["name"]
+                    }
+
+                    # Handle start datetime
+                    if event['start'].get('dateTime'):
+                        new_event['allday'] = False
+                        new_event['startDatetime'] = self.to_datetime(event['start']['dateTime'], localTZ)
+                    else:
+                        new_event['allday'] = True
+                        new_event['startDatetime'] = self.to_datetime(event['start']['date'], localTZ)
+
+                    # Handle end datetime
+                    if event['end'].get('dateTime'):
+                        new_event['endDatetime'] = self.adjust_end_time(
+                            self.to_datetime(event['end']['dateTime'], localTZ), localTZ)
+                    else:
+                        new_event['endDatetime'] = self.adjust_end_time(
+                            self.to_datetime(event['end']['date'], localTZ), localTZ)
+
+                    new_event['updatedDatetime'] = self.to_datetime(event['updated'], localTZ)
+                    new_event['isUpdated'] = self.is_recent_updated(new_event['updatedDatetime'], thresholdHours)
+                    new_event['isMultiday'] = self.is_multiday(new_event['startDatetime'], new_event['endDatetime'])
+
+                    calendar_event_map[cal_id]["events"].append(new_event)
+
+            except Exception as e:
+                self.logger.warning(f"Failed to fetch events for calendar {cal_id}: {e}")
+
+        return calendar_event_map
         # Call the Google Calendar API and return a list of events that fall within the specified dates
-        eventList = []
+        # eventList = []
 
-        minTimeStr = startDatetime.isoformat()
-        maxTimeStr = endDatetime.isoformat()
-        if False:
-            return eventList
+        # minTimeStr = startDatetime.isoformat()
+        # maxTimeStr = endDatetime.isoformat()
+        # if False:
+        #     return eventList
 
-        self.logger.info('Retrieving events between ' + minTimeStr + ' and ' + maxTimeStr + '...')
-        events_result = []
-        for cal in calendars:
-            events_result.append(
-                self.service.events().list(calendarId=cal, timeMin=minTimeStr,
-                                           timeMax=maxTimeStr, singleEvents=True,
-                                           orderBy='startTime').execute()
-            )
+        # events_result = []
+        # for cal in calendars:
+        #     events_result.append(
+        #         self.service.events().list(calendarId=cal, timeMin=minTimeStr,
+        #                                    timeMax=maxTimeStr, singleEvents=True,
+        #                                    orderBy='startTime').execute()
+        #     )
 
-        events = []
-        for eve in events_result:
-            events += eve.get('items', [])
-            # events = events_result.get('items', [])
+        # events = []
+        # for eve in events_result:
+        #     events += eve.get('items', [])
+        #     # events = events_result.get('items', [])
 
-        if not events:
-            self.logger.info('No upcoming events found.')
-        for event in events:
-            # extracting and converting events data into a new list
-            newEvent = {}
-            newEvent['summary'] = event['summary']
+        # if not events:
+        #     self.logger.info('No upcoming events found.')
+        # for event in events:
+        #     # extracting and converting events data into a new list
+        #     newEvent = {}
+        #     newEvent['summary'] = event['summary']
 
-            if event['start'].get('dateTime') is None:
-                newEvent['allday'] = True
-                newEvent['startDatetime'] = self.to_datetime(event['start'].get('date'), localTZ)
-            else:
-                newEvent['allday'] = False
-                newEvent['startDatetime'] = self.to_datetime(event['start'].get('dateTime'), localTZ)
+        #     if event['start'].get('dateTime') is None:
+        #         newEvent['allday'] = True
+        #         newEvent['startDatetime'] = self.to_datetime(event['start'].get('date'), localTZ)
+        #     else:
+        #         newEvent['allday'] = False
+        #         newEvent['startDatetime'] = self.to_datetime(event['start'].get('dateTime'), localTZ)
 
-            if event['end'].get('dateTime') is None:
-                newEvent['endDatetime'] = self.adjust_end_time(self.to_datetime(event['end'].get('date'), localTZ),
-                                                               localTZ)
-            else:
-                newEvent['endDatetime'] = self.adjust_end_time(self.to_datetime(event['end'].get('dateTime'), localTZ),
-                                                               localTZ)
+        #     if event['end'].get('dateTime') is None:
+        #         newEvent['endDatetime'] = self.adjust_end_time(self.to_datetime(event['end'].get('date'), localTZ),
+        #                                                        localTZ)
+        #     else:
+        #         newEvent['endDatetime'] = self.adjust_end_time(self.to_datetime(event['end'].get('dateTime'), localTZ),
+        #                                                        localTZ)
 
-            newEvent['updatedDatetime'] = self.to_datetime(event['updated'], localTZ)
-            newEvent['isUpdated'] = self.is_recent_updated(newEvent['updatedDatetime'], thresholdHours)
-            newEvent['isMultiday'] = self.is_multiday(newEvent['startDatetime'], newEvent['endDatetime'])
-            eventList.append(newEvent)
+        #     newEvent['updatedDatetime'] = self.to_datetime(event['updated'], localTZ)
+        #     newEvent['isUpdated'] = self.is_recent_updated(newEvent['updatedDatetime'], thresholdHours)
+        #     newEvent['isMultiday'] = self.is_multiday(newEvent['startDatetime'], newEvent['endDatetime'])
+        #     eventList.append(newEvent)
 
-        # We need to sort eventList because the event will be sorted in "calendar order" instead of hours order
-        # TODO: improve because of double cycle for now is not much cost
-        eventList = sorted(eventList, key=lambda k: k['startDatetime'])
-        return eventList
+        # # We need to sort eventList because the event will be sorted in "calendar order" instead of hours order
+        # # TODO: improve because of double cycle for now is not much cost
+        # eventList = sorted(eventList, key=lambda k: k['startDatetime'])
+        # return eventList
