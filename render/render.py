@@ -210,7 +210,6 @@ class RenderHelper:
 
         # batteryDisplayMode - 0: do not show / 1: always show / 2: show when battery is low
         battLevel = calDict["batteryLevel"]
-        battLevel = 55
 
         week_day_headers = "".join(
             f"<div>{dayOfWeekText[(i + weekStartDay) % 7]}</div>\n" for i in range(7)
