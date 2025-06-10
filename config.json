@@ -14,21 +14,12 @@
   "rotateAngle": 180,
   "is24h": false,
   "calendars": [
-    "primary",
-    "uqdcdhpp71klf5f2qk8khf9r4k@group.calendar.google.com"
+    "primary"
   ],
   "calendarsWithLabels": {
     "primary": {
-      "name": "Dan",
+      "name": "Label",
       "icon": "★"
-    },
-    "uqdcdhpp71klf5f2qk8khf9r4k@group.calendar.google.com": {
-      "name": "Eiley",
-      "icon": "❤"
-    },
-    "stipeified@gmail.com": {
-      "name": "Candace",
-      "icon": "⬢"
     }
   }
 }
