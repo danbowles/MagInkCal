@@ -216,13 +216,11 @@ class RenderHelper:
         )
         
         # Calculate proper start and grid size
-        month_start = today.replace(day=1)
-        sunday_offset = (month_start.weekday() + 1) % 7
-        calStartDate = month_start - timedelta(days=sunday_offset)
+        today = calDict["today"]
+        sunday_offset = (today.weekday() + 1) % 7  # Offset to the previous Sunday
+        calStartDate = today - timedelta(days=sunday_offset)
 
-        end_of_month = today.replace(day=monthrange(today.year, today.month)[1])
-        days_needed = (end_of_month - calStartDate).days + 1
-        grid_size = 42 if days_needed > 35 else 35
+        grid_size = 14
 
         calendar_cells = []
         # Then:
