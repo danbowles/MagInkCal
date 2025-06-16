@@ -374,13 +374,14 @@ class RenderHelper:
         #     calendar_cells.append(day_cell.strip())
 
         # Append the bottom and write the file
+        battLevel = calDict["batteryLevel"]
         htmlFile = open(self.currPath + "/calendar.html", "w")
         htmlFile.write(
             calendar_template.format(
                 month_year=month_year,
                 weekday_day=weekday_day,
                 week_day_headers=week_day_headers,
-                batt_level_percent=f"{calDict["batteryLevel"]}%",
+                batt_level_percent=f"{battLevel}%",
                 legendHtml=legendHtml,
                 events="\n".join(calendar_cells),
             )
