@@ -168,35 +168,36 @@ class RenderHelper:
         }
         """
         # Initialize 35-day calendar list
-        calList = [[] for _ in range(35)]
+        # calList = [[] for _ in range(35)]
 
         maxEventsPerDay = calDict["maxEventsPerDay"]
         calendarMap = calDict["calendarMap"]
-        batteryDisplayMode = calDict["batteryDisplayMode"]
+        # batteryDisplayMode = calDict["batteryDisplayMode"]
         dayOfWeekText = calDict["dayOfWeekText"]
         weekStartDay = calDict["weekStartDay"]
         is24hour = calDict["is24hour"]
         calStartDate = calDict["calStartDate"]
         today = calDict["today"]
 
+        # Create legend HTML
         legendHtml = ""
         for cal_id, info in calendarMap.items():
             legendHtml += f'<div class="flex items-center"><span class="mr-1">{info["icon"]}</span>{info["name"]}</div>\n'
 
         # Merge and assign events to days
-        for cal_id, cal_data in calendarMap.items():
-            for event in cal_data["events"]:
-                event["icon"] = cal_data["icon"]
-                event["ownerName"] = cal_data["name"]
-                idx = self.get_day_in_cal(calStartDate, event["startDatetime"].date())
-                if 0 <= idx < len(calList):
-                    calList[idx].append(event)
-                if event["isMultiday"]:
-                    end_idx = self.get_day_in_cal(
-                        calStartDate, event["endDatetime"].date()
-                    )
-                    if 0 <= end_idx < len(calList):
-                        calList[end_idx].append(event)
+        # for cal_id, cal_data in calendarMap.items():
+        #     for event in cal_data["events"]:
+        #         event["icon"] = cal_data["icon"]
+        #         event["ownerName"] = cal_data["name"]
+        #         idx = self.get_day_in_cal(calStartDate, event["startDatetime"].date())
+        #         if 0 <= idx < len(calList):
+        #             calList[idx].append(event)
+        #         if event["isMultiday"]:
+        #             end_idx = self.get_day_in_cal(
+        #                 calStartDate, event["endDatetime"].date()
+        #             )
+        #             if 0 <= end_idx < len(calList):
+        #                 calList[end_idx].append(event)
 
         # Read the template
         with open(self.currPath + "/calendar_template.html", "r") as file:
@@ -209,64 +210,169 @@ class RenderHelper:
         weekday_day = f"{weekday}, {day}{ordinal_suffix(day)}"
 
         # batteryDisplayMode - 0: do not show / 1: always show / 2: show when battery is low
-        battLevel = calDict["batteryLevel"]
+        # battLevel = calDict["batteryLevel"]
 
+        # Generate week day headers
         week_day_headers = "".join(
             f"<div>{dayOfWeekText[(i + weekStartDay) % 7]}</div>\n" for i in range(7)
         )
-        
-        # Calculate proper start and grid size
+
+        # Calculate start of calendar
+        grid_size = 14
         today = calDict["today"]
         sunday_offset = (today.weekday() + 1) % 7  # Offset to the previous Sunday
         calStartDate = today - timedelta(days=sunday_offset)
 
-        grid_size = 14
+        # Assign events to each day
+        day_event_map = [[] for _ in range(grid_size)]
+        for cal in calendarMap.values():
+            for event in cal["events"]:
+                start = event["startDatetime"].date()
+                end = event["endDatetime"].date()
+                span = (end - start).days
 
+                # Add to each day of multi-day all-day events
+                if event["allday"] and event["isMultiday"]:
+                    for i in range(span + 1):
+                        curr_day = start + timedelta(days=i)
+                        if (
+                            calStartDate
+                            <= curr_day
+                            < calStartDate + timedelta(days=grid_size)
+                        ):
+                            idx = (curr_day - calStartDate).days
+                            marker = (
+                                "►"
+                                if curr_day == start
+                                else "◄" if curr_day == end else ""
+                            )
+
+                            # Mark first and last day of multi-day
+                            day_event_map[idx].append(
+                                {
+                                    **event,
+                                    "icon": cal["icon"],
+                                    "name": cal["name"],
+                                    "marker": marker,
+                                }
+                            )
+
+                else:
+                    # Normal single-day events
+                    curr_day = event["startDatetime"].date()
+                    if (
+                        calStartDate
+                        <= curr_day
+                        < calStartDate + timedelta(days=grid_size)
+                    ):
+                        idx = (curr_day - calStartDate).days
+                        day_event_map[idx].append(
+                            {
+                                **event,
+                                "icon": cal["icon"],
+                                "name": cal["name"],
+                                "marker": "",
+                            }
+                        )
+
+        # sorted_events = sorted(
+        #     day_event_map[i],
+        #     key=lambda e: (
+        #         not (e["allday"] or e["isMultiday"]),  # all-day/multi-day → top
+        #         e["startDatetime"],  # then by time
+        #     ),
+        # )
+
+        # Generate calendar cells
         calendar_cells = []
-        # Then:
         for i in range(grid_size):
             curr_date = calStartDate + timedelta(days=i)
-            events = []
-
-            for cal in calendarMap.values():
-                for e in cal["events"]:
-                    if e["startDatetime"].date() == curr_date:
-                        events.append({**e, "icon": cal["icon"], "name": cal["name"]})
-
-            events.sort(key=lambda e: e["startDatetime"])
+            events = sorted(
+                day_event_map[i],
+                key=lambda e: (
+                    not (e["allday"] or e["isMultiday"]),  # all-day/multi-day → top
+                    e["startDatetime"],  # then by time
+                ),
+            )
 
             # Determine styling
-            extra_classes = ' text-einkGray' if curr_date.month != today.month else ''
+            extra_classes = " text-einkGray" if curr_date.month != today.month else ""
             day_cell = f'<div class="p-1 border border-gray-200{extra_classes}">'
 
-            # Day number rendering
+            # Date number rendering
             if curr_date == today:
-                day_cell += f'''
-                <div class="flex justify-between items-center mb-1">
-                <div class="w-6 h-6 text-center leading-6 rounded-full font-bold text-white bg-einkRed">{curr_date.day}</div>
+                day_cell += f"""
+                <div class="flex justify-center items-center my-2">
+                <div class="w-8 h-8 text-center leading-8 rounded-full font-bold text-white bg-einkRed text-2xl">{curr_date.day}</div>
                 </div>
-                '''
+                """
             else:
-                day_cell += f'<div class="mb-1 font-bold">{curr_date.day}</div>\n'
+                day_cell += f'<div class="my-2 font-bold text-center text-2xl">{curr_date.day}</div>\n'
 
             # Event rendering
             for e in events[:maxEventsPerDay]:
-                if e['allday']:
-                    label = f'{e["icon"]} {e["summary"]}'
+                if e["allday"]:
+                    label = f'{e["icon"]} {e["marker"]}{e["summary"]}'
                 else:
                     t = e["startDatetime"]
-                    time_str = f'{t.hour:02d}:{t.minute:02d}' if is24hour else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
+                    time_str = (
+                        f"{t.hour:02d}:{t.minute:02d}"
+                        if is24hour
+                        else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
+                    )
                     label = f'{e["icon"]} {time_str} {e["summary"]}'
                 day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis">{label}</div>\n'
 
             # Overflow indicator
             if len(events) > maxEventsPerDay:
-                day_cell += f'<div class="text-einkGray text-xs">{len(events) - maxEventsPerDay} more</div>'
+                day_cell += f'<div class="text-einkGray text-base">{len(events) - maxEventsPerDay} more</div>'
 
-            day_cell += '</div>'
+            day_cell += "</div>"
             calendar_cells.append(day_cell.strip())
 
-            
+        # Then:
+        # for i in range(grid_size):
+        #     curr_date = calStartDate + timedelta(days=i)
+        #     events = []
+
+        #     for cal in calendarMap.values():
+        #         for e in cal["events"]:
+        #             if e["startDatetime"].date() == curr_date:
+        #                 events.append({**e, "icon": cal["icon"], "name": cal["name"]})
+
+        #     events.sort(key=lambda e: e["startDatetime"])
+
+        #     # Determine styling
+        #     extra_classes = ' text-einkGray' if curr_date.month != today.month else ''
+        #     day_cell = f'<div class="p-1 border border-gray-200{extra_classes}">'
+
+        #     # Day number rendering
+        #     if curr_date == today:
+        #         day_cell += f'''
+        #         <div class="flex justify-center items-center my-2">
+        #         <div class="w-8 h-8 text-center leading-8 rounded-full font-bold text-white bg-einkRed text-2xl">{curr_date.day}</div>
+        #         </div>
+        #         '''
+        #     else:
+        #         day_cell += f'<div class="my-2 font-bold text-center text-2xl">{curr_date.day}</div>\n'
+
+        #     # Event rendering
+        #     for e in events[:maxEventsPerDay]:
+        #         if e['allday']:
+        #             label = f'{e["icon"]} {e["summary"]}'
+        #         else:
+        #             t = e["startDatetime"]
+        #             time_str = f'{t.hour:02d}:{t.minute:02d}' if is24hour else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
+        #             label = f'{e["icon"]} {time_str} {e["summary"]}'
+        #         day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis">{label}</div>\n'
+
+        #     # Overflow indicator
+        #     if len(events) > maxEventsPerDay:
+        #         day_cell += f'<div class="text-einkGray text-base">{len(events) - maxEventsPerDay} more</div>'
+
+        #     day_cell += '</div>'
+        #     calendar_cells.append(day_cell.strip())
+
         # Append the bottom and write the file
         htmlFile = open(self.currPath + "/calendar.html", "w")
         htmlFile.write(
@@ -274,9 +380,9 @@ class RenderHelper:
                 month_year=month_year,
                 weekday_day=weekday_day,
                 week_day_headers=week_day_headers,
-                batt_level_percent=f"{battLevel}%",
+                batt_level_percent=f"{calDict["batteryLevel"]}%",
                 legendHtml=legendHtml,
-                events='\n'.join(calendar_cells),
+                events="\n".join(calendar_cells),
             )
         )
         htmlFile.close()

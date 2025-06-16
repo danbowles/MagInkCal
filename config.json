@@ -1,7 +1,7 @@
 {
   "displayTZ": "America/New_York",
   "thresholdHours": 24,
-  "maxEventsPerDay": 3,
+  "maxEventsPerDay": 8,
   "isDisplayToScreen": false,
   "isShutdownOnComplete": false,
   "batteryDisplayMode": 1,
@@ -18,7 +18,19 @@
   ],
   "calendarsWithLabels": {
     "primary": {
-      "name": "Label",
+      "name": "Dan",
+      "icon": "☢"
+    },
+    "uqdcdhpp71klf5f2qk8khf9r4k@group.calendar.google.com": {
+      "name": "Eiley",
+      "icon": "❤"
+    },
+    "stipeified@gmail.com": {
+      "name": "Candace",
+      "icon": "⬢"
+    },
+    "family00583163237882407933@group.calendar.google.com": {
+      "name": "Family",
       "icon": "★"
     }
   }
