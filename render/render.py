@@ -275,14 +275,6 @@ class RenderHelper:
                             }
                         )
 
-        # sorted_events = sorted(
-        #     day_event_map[i],
-        #     key=lambda e: (
-        #         not (e["allday"] or e["isMultiday"]),  # all-day/multi-day → top
-        #         e["startDatetime"],  # then by time
-        #     ),
-        # )
-
         # Generate calendar cells
         calendar_cells = []
         for i in range(grid_size):
@@ -302,12 +294,12 @@ class RenderHelper:
             # Date number rendering
             if curr_date == today:
                 day_cell += f"""
-                <div class="flex justify-center items-center my-2">
-                <div class="w-8 h-8 text-center leading-8 rounded-full font-bold text-white bg-einkRed text-2xl">{curr_date.day}</div>
+                <div class="flex justify-center items-center mb-2 mt-1">
+                    <div class="w-9 h-9 text-center leading-9 rounded-full font-bold text-black bg-einkRed text-2xl">{curr_date.day}</div>
                 </div>
                 """
             else:
-                day_cell += f'<div class="my-2 font-bold text-center text-2xl">{curr_date.day}</div>\n'
+                day_cell += f'<div class="mt-1 mb-2 h-9 font-bold text-center text-2xl">{curr_date.day}</div>\n'
 
             # Event rendering
             for e in events[:maxEventsPerDay]:
@@ -321,7 +313,7 @@ class RenderHelper:
                         else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
                     )
                     label = f'{e["icon"]} {time_str} {e["summary"]}'
-                day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis">{label}</div>\n'
+                day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{label}</div>\n'
 
             # Overflow indicator
             if len(events) > maxEventsPerDay:
@@ -329,49 +321,6 @@ class RenderHelper:
 
             day_cell += "</div>"
             calendar_cells.append(day_cell.strip())
-
-        # Then:
-        # for i in range(grid_size):
-        #     curr_date = calStartDate + timedelta(days=i)
-        #     events = []
-
-        #     for cal in calendarMap.values():
-        #         for e in cal["events"]:
-        #             if e["startDatetime"].date() == curr_date:
-        #                 events.append({**e, "icon": cal["icon"], "name": cal["name"]})
-
-        #     events.sort(key=lambda e: e["startDatetime"])
-
-        #     # Determine styling
-        #     extra_classes = ' text-einkGray' if curr_date.month != today.month else ''
-        #     day_cell = f'<div class="p-1 border border-gray-200{extra_classes}">'
-
-        #     # Day number rendering
-        #     if curr_date == today:
-        #         day_cell += f'''
-        #         <div class="flex justify-center items-center my-2">
-        #         <div class="w-8 h-8 text-center leading-8 rounded-full font-bold text-white bg-einkRed text-2xl">{curr_date.day}</div>
-        #         </div>
-        #         '''
-        #     else:
-        #         day_cell += f'<div class="my-2 font-bold text-center text-2xl">{curr_date.day}</div>\n'
-
-        #     # Event rendering
-        #     for e in events[:maxEventsPerDay]:
-        #         if e['allday']:
-        #             label = f'{e["icon"]} {e["summary"]}'
-        #         else:
-        #             t = e["startDatetime"]
-        #             time_str = f'{t.hour:02d}:{t.minute:02d}' if is24hour else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
-        #             label = f'{e["icon"]} {time_str} {e["summary"]}'
-        #         day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis">{label}</div>\n'
-
-        #     # Overflow indicator
-        #     if len(events) > maxEventsPerDay:
-        #         day_cell += f'<div class="text-einkGray text-base">{len(events) - maxEventsPerDay} more</div>'
-
-        #     day_cell += '</div>'
-        #     calendar_cells.append(day_cell.strip())
 
         # Append the bottom and write the file
         battLevel = calDict["batteryLevel"]
