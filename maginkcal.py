@@ -152,7 +152,7 @@ def main():
         # implementing a failsafe so that we don't shutdown when debugging
         # checking if it's 6am in the morning, which is the time I've set PiSugar to wake and refresh the calendar
         # if it is 6am, shutdown the RPi. if not 6am, assume I'm debugging the code, so do not shutdown
-        if currDatetime.hour == 6:
+        if currDatetime.hour == 8:
             logger.info("Shutting down safely.")
             import os
             os.system("sudo shutdown -h now")
