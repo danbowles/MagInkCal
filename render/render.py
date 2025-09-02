@@ -307,11 +307,13 @@ class RenderHelper:
                     label = f'{e["icon"]} {e["marker"]}{e["summary"]}'
                 else:
                     t = e["startDatetime"]
-                    time_str = (
-                        f"{t.hour:02d}:{t.minute:02d}"
-                        if is24hour
-                        else f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
-                    )
+                    
+                    # Check if the minute is 00
+                    if t.minute == 0:
+                        time_str = f'{t.hour % 12 or 12}{"a" if t.hour < 12 else "p"}'
+                    else:
+                        time_str = f'{t.hour % 12 or 12}:{t.minute:02d}{"a" if t.hour < 12 else "p"}'
+                        
                     label = f'{e["icon"]} {time_str} {e["summary"]}'
                 day_cell += f'<div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{label}</div>\n'
 
