@@ -82,9 +82,56 @@ crontab -e
 @reboot cd /location/to/your/maginkcal && python3 maginkcal.py
 ```
 
-12. That's all! Your Magic Calendar should now be refreshed at the time interval that you specified in the PiSugar2 web interface! 
+12. That's all! Your Magic Calendar should now be refreshed at the time interval that you specified in the PiSugar2 web interface!
 
 PS: I'm aware that the instructions above may not be complete, especially when it comes to the Python libraries to be installed, so feel free to ping me if you noticed anything missing and I'll add it to the steps above.
+
+## Configuration
+
+All configuration lives in `config.json` in the project root.
+
+| Key | Description |
+|-----|-------------|
+| `displayTZ` | Timezone for the calendar display (e.g. `"America/New_York"`). Full list: `python3 -c "import pytz; print(pytz.all_timezones)"` |
+| `isDisplayToScreen` | `true` to push the rendered image to the e-ink display. Set to `false` when testing locally to skip hardware interaction. |
+| `isShutdownOnComplete` | `true` to power off the Pi via PiSugar after each update. Set to `false` when debugging. |
+| `batteryDisplayMode` | `0` = never show battery indicator, `1` = always show, `2` = only show when low |
+| `weekStartDay` | `6` = week starts Sunday, `0` = week starts Monday |
+| `thresholdHours` | Events updated within this many hours are highlighted as recently changed |
+| `maxEventsPerDay` | Max events shown per day; additional events appear as "+X more" |
+| `is24h` | `true` for 24-hour time format, `false` for 12-hour |
+| `rotateAngle` | Degrees to rotate the final image — adjust based on display orientation/mounting |
+| `screenWidth` / `screenHeight` | Physical display resolution (pixels) |
+| `imageWidth` / `imageHeight` | Resolution of the image generated for the display |
+| `calendarsWithLabels` | Dict of Google Calendar IDs to display, each with a `name` and `icon` |
+
+## Running Locally (Development)
+
+With your venv activated:
+
+```bash
+cd /path/to/MagInkCal
+python maginkcal.py
+```
+
+For local testing, keep `config.json` set to:
+```json
+"isDisplayToScreen": false,
+"isShutdownOnComplete": false
+```
+
+This fetches events and renders `render/calendar.png` without touching any hardware. Open that file to check the output visually.
+
+### Skipping shutdown during testing
+
+If `isShutdownOnComplete` is `true` (e.g. you're testing with the production config), set the following env var to prevent the Pi from powering off:
+
+```bash
+export MAGINKCAL_NO_SHUTDOWN=1
+python maginkcal.py
+```
+
+Unset it (or simply don't set it) in production — the Pi will shut down normally after each update.
 
 ## Acknowledgements
 - [Quattrocento Font](https://fonts.google.com/specimen/Quattrocento): Font used for the calendar display

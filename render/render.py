@@ -53,24 +53,16 @@ class RenderHelper:
 
     def get_screenshot(self):
         from selenium.webdriver.chrome.service import Service
-
-        chrome_path = shutil.which("chromium-browser")
-        driver_path = shutil.which("chromedriver")
-
-        if not chrome_path:
-            raise FileNotFoundError("Could not find chromium-browser in PATH")
-        if not driver_path:
-            raise FileNotFoundError("Could not find chromedriver in PATH")
+        from webdriver_manager.chrome import ChromeDriverManager
 
         opts = Options()
-        opts.binary_location = chrome_path
         opts.add_argument("--headless")
         opts.add_argument("--hide-scrollbars")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument("--force-device-scale-factor=1")
 
-        service = Service(executable_path=driver_path)
+        service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=opts)
 
         try:

@@ -9,6 +9,7 @@ There will also be work needed to adjust the calendar rendering for different sc
 CSS stylesheets in the "render" folder.
 """
 import datetime as dt
+import os
 import sys
 
 from pytz import timezone
@@ -71,6 +72,8 @@ def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))  # print logger to stdout
     logger.setLevel(logging.INFO)
     logger.info("Starting daily calendar update")
+
+    currDatetime = None
 
     try:
         # Establish current date and time information
@@ -143,19 +146,20 @@ def main():
 
     logger.info("Completed daily calendar update")
 
-    logger.info(
-        "Checking if configured to shutdown safely - Current hour: {}".format(
-            currDatetime.hour
+    if currDatetime is None:
+        logger.error("currDatetime was never set; skipping shutdown check")
+    else:
+        logger.info(
+            "Checking if configured to shutdown safely - Current hour: {}".format(
+                currDatetime.hour
+            )
         )
-    )
-    if isShutdownOnComplete:
-        # Failsafe shutdown at 8am
-        # Tells pisugar to shutdown safely
-        if currDatetime.hour == 8:
+    if isShutdownOnComplete and currDatetime is not None:
+        if os.environ.get("MAGINKCAL_NO_SHUTDOWN"):
+            logger.info("Shutdown skipped (MAGINKCAL_NO_SHUTDOWN is set)")
+        elif currDatetime.hour == 8:
             logger.info("Shutting down safely.")
-            import os
             os.system("pisugar-poweroff -m 'PiSugar 3'")
-            logger.info("Shutting down safely.")
 
 if __name__ == "__main__":
     main()
