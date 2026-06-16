@@ -53,7 +53,6 @@ class RenderHelper:
 
     def get_screenshot(self):
         from selenium.webdriver.chrome.service import Service
-        from webdriver_manager.chrome import ChromeDriverManager
 
         opts = Options()
         opts.add_argument("--headless")
@@ -62,7 +61,21 @@ class RenderHelper:
         opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument("--force-device-scale-factor=1")
 
-        service = Service(ChromeDriverManager().install())
+        chromedriver_path = shutil.which("chromedriver")
+        if chromedriver_path:
+            service = Service(chromedriver_path)
+        else:
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "ChromeDriver was not found. On Raspberry Pi, install it with "
+                    "`sudo apt-get install chromium-chromedriver`, or install the "
+                    "optional Python package with `pip3 install webdriver-manager`."
+                ) from exc
+
+            service = Service(ChromeDriverManager().install())
+
         driver = webdriver.Chrome(service=service, options=opts)
 
         try:
