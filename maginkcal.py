@@ -20,6 +20,32 @@ import json
 import logging
 
 
+def setup_logger(display_tz):
+    log_dir = os.environ.get("MAGINKCAL_LOG_DIR", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    run_started = dt.datetime.now(display_tz)
+    timestamp = run_started.strftime("%Y%m%d-%H%M%S-%Z")
+    log_file = os.path.join(log_dir, f"maginkcal-{timestamp}.log")
+
+    logger = logging.getLogger("maginkcal")
+    logger.handlers.clear()
+    logger.propagate = False
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter("%(asctime)s %(levelname)s - %(message)s")
+
+    file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    return logger, log_file
+
+
 def main():
     # Basic configuration settings (user replaceable)
     configFile = open("config.json")
@@ -62,16 +88,9 @@ def main():
         "calendarsWithLabels"
     ]  # calendar labels to be used in the calendar
 
-    # Create and configure logger
-    logging.basicConfig(
-        filename="logfile.log",
-        format="%(asctime)s %(levelname)s - %(message)s",
-        filemode="a",
-    )
-    logger = logging.getLogger("maginkcal")
-    logger.addHandler(logging.StreamHandler(sys.stdout))  # print logger to stdout
-    logger.setLevel(logging.INFO)
+    logger, logFile = setup_logger(displayTZ)
     logger.info("Starting daily calendar update")
+    logger.info("Run log: {}".format(os.path.abspath(logFile)))
 
     currDatetime = None
 
@@ -141,8 +160,8 @@ def main():
         currBatteryLevel = powerService.get_battery()
         logger.info("Battery level at end: {:.3f}".format(currBatteryLevel))
 
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception("Daily calendar update failed")
 
     logger.info("Completed daily calendar update")
 
@@ -159,7 +178,11 @@ def main():
             logger.info("Shutdown skipped (MAGINKCAL_NO_SHUTDOWN is set)")
         elif currDatetime.hour == 8:
             logger.info("Shutting down safely.")
+            logging.shutdown()
             os.system("pisugar-poweroff -m 'PiSugar 3'")
+            return
+
+    logging.shutdown()
 
 if __name__ == "__main__":
     main()

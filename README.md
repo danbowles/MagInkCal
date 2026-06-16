@@ -122,6 +122,16 @@ For local testing, keep `config.json` set to:
 
 This fetches events and renders `render/calendar.png` without touching any hardware. Open that file to check the output visually.
 
+### Runtime logs
+
+Each run writes a timestamped log file under `logs/`, for example:
+
+```text
+logs/maginkcal-20260616-143000-EDT.log
+```
+
+Set `MAGINKCAL_LOG_DIR` before running if you want to write logs somewhere else.
+
 ### Skipping shutdown during testing
 
 If `isShutdownOnComplete` is `true` (e.g. you're testing with the production config), set the following env var to prevent the Pi from powering off:
